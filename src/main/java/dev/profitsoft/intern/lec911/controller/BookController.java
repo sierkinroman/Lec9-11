@@ -8,7 +8,15 @@ import dev.profitsoft.intern.lec911.service.BookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -35,17 +43,15 @@ public class BookController {
     @GetMapping
     public ResponseEntity<Object> getAllBooks() {
         List<BookDetailsDto> books = bookService.findAll();
-        if (books.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.ok(books);
-        }
+        return books.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(books);
     }
 
     @PutMapping("/{id}")
-    public RestResponse updateBook(@Valid @PathVariable long id, @RequestBody BookSaveDto dto) {
+    public RestResponse updateBook(@PathVariable long id, @Valid @RequestBody BookSaveDto dto) {
         bookService.update(id, dto);
-        return new RestResponse("OK");
+        return new RestResponse("Update was successful");
     }
 
     @PostMapping("/_search")
@@ -57,7 +63,7 @@ public class BookController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public RestResponse deleteBook(@PathVariable long id) {
         bookService.deleteById(id);
-        return new RestResponse("OK");
+        return new RestResponse("Delete was successful");
     }
 
 }
