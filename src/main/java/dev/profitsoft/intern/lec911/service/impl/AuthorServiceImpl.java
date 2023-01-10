@@ -29,11 +29,11 @@ public class AuthorServiceImpl implements AuthorService {
         return AuthorDetailsDto.builder()
                 .firstName(author.getFirstName())
                 .lastName(author.getLastName())
-                .books(bookToBookInfo(author.getBooks()))
+                .books(convertToBookInfo(author.getBooks()))
                 .build();
     }
 
-    private List<BookInfoDto> bookToBookInfo(Set<Book> books) {
+    private List<BookInfoDto> convertToBookInfo(Set<Book> books) {
         return books.stream()
                 .map(book -> new BookInfoDto(book.getTitle(), book.getPublishedDate()))
                 .toList();

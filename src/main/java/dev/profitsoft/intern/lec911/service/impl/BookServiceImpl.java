@@ -4,7 +4,7 @@ import dev.profitsoft.intern.lec911.dto.author.AuthorInfoDto;
 import dev.profitsoft.intern.lec911.dto.book.BookDetailsDto;
 import dev.profitsoft.intern.lec911.dto.book.BookQueryDto;
 import dev.profitsoft.intern.lec911.dto.book.BookSaveDto;
-import dev.profitsoft.intern.lec911.exception.NotFoundException;
+import dev.profitsoft.intern.lec911.exception.ResourceNotFoundException;
 import dev.profitsoft.intern.lec911.model.Author;
 import dev.profitsoft.intern.lec911.model.Book;
 import dev.profitsoft.intern.lec911.repository.AuthorRepository;
@@ -26,9 +26,9 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public long save(BookSaveDto dto) {
-        validateBook(dto);
+        validateDto(dto);
         Book book = new Book();
-        updateDataFromDto(book, dto);
+        updateBookFromDto(book, dto);
         return bookRepository.save(book).getId();
     }
 
@@ -47,8 +47,9 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public void update(long id, BookSaveDto dto) {
+        validateDto(dto);
         Book book = getOrThrow(id);
-        updateDataFromDto(book, dto);
+        updateBookFromDto(book, dto);
         bookRepository.save(book);
     }
 
@@ -64,13 +65,17 @@ public class BookServiceImpl implements BookService {
         return null;
     }
 
-    private void validateBook(BookSaveDto dto) {
+    private void validateDto(BookSaveDto dto) {
+        bookRepository.findByIsbn(dto.getIsbn()).ifPresent(book -> {
+            throw new IllegalArgumentException("book with given isbn already exists");
+        });
+
         if (dto.getPublishedDate() != null && dto.getPublishedDate().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("publishedDate should be before now");
         }
     }
 
-    private void updateDataFromDto(Book book, BookSaveDto dto) {
+    private void updateBookFromDto(Book book, BookSaveDto dto) {
         book.setTitle(dto.getTitle());
         book.setIsbn(dto.getIsbn());
         book.setPublishedDate(dto.getPublishedDate());
@@ -81,14 +86,13 @@ public class BookServiceImpl implements BookService {
         if (authorId == null) {
             return null;
         }
-
         return authorRepository.findById(authorId).
                 orElseThrow(() -> new IllegalArgumentException("Author with id %d not found".formatted(authorId)));
     }
 
     private Book getOrThrow(long id) {
         return bookRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Book with id %d not found".formatted(id)));
+                .orElseThrow(() -> new ResourceNotFoundException("Book with id %d not found".formatted(id)));
     }
 
     private BookDetailsDto convertToBookDetails(Book book) {
@@ -96,11 +100,11 @@ public class BookServiceImpl implements BookService {
                 .title(book.getTitle())
                 .isbn(book.getIsbn())
                 .publishedDate(book.getPublishedDate())
-                .author(authorToAuthorInfo(book.getAuthor()))
+                .author(convertToAuthorInfo(book.getAuthor()))
                 .build();
     }
 
-    private AuthorInfoDto authorToAuthorInfo(Author author) {
+    private AuthorInfoDto convertToAuthorInfo(Author author) {
         if (author == null) {
             return null;
         }
