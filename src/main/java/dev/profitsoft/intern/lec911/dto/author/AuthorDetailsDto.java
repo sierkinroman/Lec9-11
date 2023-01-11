@@ -1,5 +1,6 @@
 package dev.profitsoft.intern.lec911.dto.author;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import dev.profitsoft.intern.lec911.dto.book.BookInfoDto;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,9 +13,8 @@ import java.util.List;
 @Builder
 public class AuthorDetailsDto {
 
-    private String firstName;
-
-    private String lastName;
+    @JsonUnwrapped
+    private AuthorInfoDto author;
 
     private List<BookInfoDto> books;
 

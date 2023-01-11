@@ -7,6 +7,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public class AuthorInfoDto {
 
+    private long id;
+
     private String firstName;
 
     private String lastName;

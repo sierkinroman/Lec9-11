@@ -13,6 +13,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class BookInfoDto {
 
+    private long id;
+
     private String title;
 
     private LocalDate publishedDate;
