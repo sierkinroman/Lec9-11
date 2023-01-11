@@ -2,6 +2,7 @@ package dev.profitsoft.intern.lec911.service.impl;
 
 import dev.profitsoft.intern.lec911.dto.author.AuthorInfoDto;
 import dev.profitsoft.intern.lec911.dto.book.BookDetailsDto;
+import dev.profitsoft.intern.lec911.dto.book.BookInfoDto;
 import dev.profitsoft.intern.lec911.dto.book.BookQueryDto;
 import dev.profitsoft.intern.lec911.dto.book.BookSaveDto;
 import dev.profitsoft.intern.lec911.exception.ResourceNotFoundException;
@@ -62,7 +63,12 @@ public class BookServiceImpl implements BookService {
     // TODO search
     @Override
     public List<BookDetailsDto> search(BookQueryDto dto) {
-        return null;
+        Author author = authorRepository.findById(dto.getAuthorId()).get();
+        int year = dto.getYear();
+        List<Book> books = bookRepository.searchAllByAuthorOrYear(null, year);
+        return books.stream()
+                .map(this::convertToBookDetails)
+                .toList();
     }
 
     private void validateDto(BookSaveDto dto) {
@@ -97,9 +103,8 @@ public class BookServiceImpl implements BookService {
 
     private BookDetailsDto convertToBookDetails(Book book) {
         return BookDetailsDto.builder()
-                .title(book.getTitle())
+                .bookInfo(new BookInfoDto(book.getId(), book.getTitle(), book.getPublishedDate()))
                 .isbn(book.getIsbn())
-                .publishedDate(book.getPublishedDate())
                 .author(convertToAuthorInfo(book.getAuthor()))
                 .build();
     }
@@ -109,7 +114,7 @@ public class BookServiceImpl implements BookService {
             return null;
         }
 
-        return new AuthorInfoDto(author.getFirstName(), author.getLastName());
+        return new AuthorInfoDto(author.getId(), author.getFirstName(), author.getLastName());
     }
 
 }
