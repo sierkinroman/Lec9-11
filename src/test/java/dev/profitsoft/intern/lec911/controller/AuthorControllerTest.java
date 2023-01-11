@@ -54,6 +54,7 @@ class AuthorControllerTest {
         response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[*].books[*].id").exists())
                 .andExpect(jsonPath("$[*].books[*].title").exists())
                 .andExpect(jsonPath("$[*].books[*].publishedDate").exists());
     }

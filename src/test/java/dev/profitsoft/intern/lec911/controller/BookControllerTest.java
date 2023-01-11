@@ -157,9 +157,11 @@ class BookControllerTest {
 
         response
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(book.getId()))
                 .andExpect(jsonPath("$.title").value(book.getTitle()))
                 .andExpect(jsonPath("$.isbn").value(book.getIsbn()))
                 .andExpect(jsonPath("$.publishedDate").value(book.getPublishedDate().toString()))
+                .andExpect(jsonPath("$.author.id").value(book.getAuthor().getId()))
                 .andExpect(jsonPath("$.author.firstName").value(book.getAuthor().getFirstName()))
                 .andExpect(jsonPath("$.author.lastName").value(book.getAuthor().getLastName()));
     }
@@ -185,6 +187,7 @@ class BookControllerTest {
         response
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$[*].author.id").exists())
                 .andExpect(jsonPath("$[*].author.firstName").exists())
                 .andExpect(jsonPath("$[*].author.lastName").exists());
 
