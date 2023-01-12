@@ -5,16 +5,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.profitsoft.intern.lec911.Lec911Application;
 import dev.profitsoft.intern.lec911.dto.RestResponse;
 import dev.profitsoft.intern.lec911.dto.book.BookSaveDto;
+import dev.profitsoft.intern.lec911.dto.book.BookSearchDto;
 import dev.profitsoft.intern.lec911.model.Author;
 import dev.profitsoft.intern.lec911.model.Book;
 import dev.profitsoft.intern.lec911.repository.AuthorRepository;
 import dev.profitsoft.intern.lec911.repository.BookRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -23,6 +25,9 @@ import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         classes = Lec911Application.class)
 @AutoConfigureMockMvc
+@Sql(scripts = "classpath:clear-tables.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class BookControllerTest {
 
     @Autowired
@@ -49,7 +55,7 @@ class BookControllerTest {
     @Autowired
     private AuthorRepository authorRepository;
 
-    @BeforeEach
+    @AfterEach
     public void beforeEach() {
         bookRepository.deleteAll();
         authorRepository.deleteAll();
@@ -58,12 +64,12 @@ class BookControllerTest {
     @Test
     public void testCreateBook_success() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
-        BookSaveDto bookSaveDto = getBookSaveDto("New book", "123456", LocalDate.now(), author.getId());
+        BookSaveDto saveDto = getBookSaveDto("New book", "123456", LocalDate.now(), author.getId());
 
         MvcResult mvcResult = mvc.perform(
                 post("/api/books")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isCreated())
                 .andReturn();
@@ -73,9 +79,9 @@ class BookControllerTest {
         Book book = bookRepository.findById(bookId).orElse(null);
 
         assertThat(book).isNotNull();
-        assertThat(book.getTitle()).isEqualTo(bookSaveDto.getTitle());
-        assertThat(book.getIsbn()).isEqualTo(bookSaveDto.getIsbn());
-        assertThat(book.getPublishedDate()).isEqualTo(bookSaveDto.getPublishedDate());
+        assertThat(book.getTitle()).isEqualTo(saveDto.getTitle());
+        assertThat(book.getIsbn()).isEqualTo(saveDto.getIsbn());
+        assertThat(book.getPublishedDate()).isEqualTo(saveDto.getPublishedDate());
         assertThat(book.getAuthor().getId()).isEqualTo(author.getId());
     }
 
@@ -107,12 +113,12 @@ class BookControllerTest {
     public void testCreateBook_duplicateIsbn() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
         bookRepository.save(new Book(1, "new book", "12345", LocalDate.now(), author));
-        BookSaveDto bookSaveDto = getBookSaveDto("new book2", "12345", LocalDate.now(), author.getId());
+        BookSaveDto saveDto = getBookSaveDto("new book2", "12345", LocalDate.now(), author.getId());
 
         mvc.perform(
                 post("/api/books")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(result ->
@@ -122,12 +128,12 @@ class BookControllerTest {
     @Test
     public void testCreateBook_publishedDateAfterNow() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
-        BookSaveDto bookSaveDto = getBookSaveDto("new book", "12345", LocalDate.now().plusDays(1), author.getId());
+        BookSaveDto saveDto = getBookSaveDto("new book", "12345", LocalDate.now().plusDays(1), author.getId());
 
         mvc.perform(
                 post("/api/books")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(result ->
@@ -136,12 +142,12 @@ class BookControllerTest {
 
     @Test
     public void testCreateBook_authorIdNotFound() throws Exception {
-        BookSaveDto bookSaveDto = getBookSaveDto("new book2", "12345", LocalDate.now(), 100);
+        BookSaveDto saveDto = getBookSaveDto("new book2", "12345", LocalDate.now(), 100);
 
         mvc.perform(
                 post("/api/books")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(result ->
@@ -213,32 +219,32 @@ class BookControllerTest {
     public void testUpdateBook_success() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
         Book book = createBook("new book", "12345", author);
-        BookSaveDto bookSaveDto = getBookSaveDto("updated Title", "123456", LocalDate.now(), author.getId());
+        BookSaveDto saveDto = getBookSaveDto("updated Title", "123456", LocalDate.now(), author.getId());
 
         mvc.perform(
                 put("/api/books/{id}", book.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isOk());
 
         Book updatedBook = bookRepository.findById(book.getId()).orElse(null);
         assertThat(updatedBook).isNotNull();
-        assertThat(updatedBook.getTitle()).isEqualTo(bookSaveDto.getTitle());
-        assertThat(updatedBook.getIsbn()).isEqualTo(bookSaveDto.getIsbn());
-        assertThat(updatedBook.getPublishedDate()).isEqualTo(bookSaveDto.getPublishedDate());
-        assertThat(updatedBook.getAuthor().getId()).isEqualTo(bookSaveDto.getAuthorId());
+        assertThat(updatedBook.getTitle()).isEqualTo(saveDto.getTitle());
+        assertThat(updatedBook.getIsbn()).isEqualTo(saveDto.getIsbn());
+        assertThat(updatedBook.getPublishedDate()).isEqualTo(saveDto.getPublishedDate());
+        assertThat(updatedBook.getAuthor().getId()).isEqualTo(saveDto.getAuthorId());
     }
 
     @Test
     public void testUpdateBook_notFound() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
-        BookSaveDto bookSaveDto = getBookSaveDto("updated Title", "12345", LocalDate.now(), author.getId());
+        BookSaveDto saveDto = getBookSaveDto("updated Title", "12345", LocalDate.now(), author.getId());
 
         mvc.perform(
                 put("/api/books/{id}", 100)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(result ->
@@ -249,12 +255,12 @@ class BookControllerTest {
     public void testUpdateBook_duplicateIsbn() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
         Book book = createBook("new book", "12345", author);
-        BookSaveDto bookSaveDto = getBookSaveDto("updated Title", "12345", LocalDate.now(), author.getId());
+        BookSaveDto saveDto = getBookSaveDto("updated Title", "12345", LocalDate.now(), author.getId());
 
         mvc.perform(
                 put("/api/books/{id}", book.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(result ->
@@ -265,12 +271,12 @@ class BookControllerTest {
     public void testUpdateBook_publishedDateAfterNow() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
         Book book = createBook("new book", "12345", author);
-        BookSaveDto bookSaveDto = getBookSaveDto("updated Title", "123456", LocalDate.now().plusDays(1), author.getId());
+        BookSaveDto saveDto = getBookSaveDto("updated Title", "123456", LocalDate.now().plusDays(1), author.getId());
 
         mvc.perform(
                 put("/api/books/{id}", book.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(result ->
@@ -281,16 +287,98 @@ class BookControllerTest {
     public void testUpdateBook_authorIdNotFound() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
         Book book = createBook("new book", "12345", author);
-        BookSaveDto bookSaveDto = getBookSaveDto("updated Title", "123456", LocalDate.now(), 100);
+        BookSaveDto saveDto = getBookSaveDto("updated Title", "123456", LocalDate.now(), 100);
 
         mvc.perform(
                 put("/api/books/{id}", book.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bookSaveDto))
+                        .content(objectMapper.writeValueAsString(saveDto))
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(result ->
                         assertThat(result.getResolvedException().getMessage()).isEqualTo("Author with id %d not found".formatted(100)));
+    }
+
+    @Test
+    @Sql("classpath:data-test.sql")
+    public void testSearchBook_success_byYearAndAuthorId() throws Exception {
+        BookSearchDto searchDto = new BookSearchDto(1L, 2002, null, null);
+
+        mvc.perform(
+                post("/api/books/_search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(searchDto))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(7)));
+    }
+
+    @Test
+    @Sql("classpath:data-test.sql")
+    public void testSearchBook_success_byAuthorId() throws Exception{
+        BookSearchDto searchDto = new BookSearchDto(1L, null, null, null);
+        mvc.perform(
+                post("/api/books/_search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(searchDto))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(4)))
+                .andExpect(jsonPath("$[*].author.id", everyItem(equalTo(1))));
+    }
+
+    @Test
+    @Sql("classpath:data-test.sql")
+    public void testSearchBook_success_byYear() throws Exception{
+        BookSearchDto searchDto = new BookSearchDto(null, 2002, null, null);
+        mvc.perform(
+                post("/api/books/_search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(searchDto))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(5)))
+                .andExpect(jsonPath("$[*].publishedDate", everyItem(containsString("2002"))));
+    }
+
+    @Test
+    @Sql("classpath:data-test.sql")
+    public void testSearchBook_success_pagination() throws Exception{
+        BookSearchDto searchDto = new BookSearchDto(1L, 2002, 1, 5);
+        mvc.perform(
+                post("/api/books/_search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(searchDto))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(5)));
+    }
+
+    @Test
+    @Sql("classpath:data-test.sql")
+    public void testSearchBook_authorIdNotFound() throws Exception{
+        BookSearchDto searchDto = new BookSearchDto(100L, 2002, 1, 5);
+        mvc.perform(
+                post("/api/books/_search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(searchDto))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(result ->
+                        assertThat(result.getResolvedException().getMessage()).isEqualTo("Author with id %d not found".formatted(100)));
+    }
+
+    @Test
+    @Sql("classpath:data-test.sql")
+    public void testSearchBook_noContent() throws Exception{
+        BookSearchDto searchDto = new BookSearchDto(null, 2002, 11, 5);
+        mvc.perform(
+                post("/api/books/_search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(searchDto))
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$").doesNotExist());
     }
 
     @Test
