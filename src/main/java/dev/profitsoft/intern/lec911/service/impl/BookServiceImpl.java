@@ -3,7 +3,7 @@ package dev.profitsoft.intern.lec911.service.impl;
 import dev.profitsoft.intern.lec911.dto.author.AuthorInfoDto;
 import dev.profitsoft.intern.lec911.dto.book.BookDetailsDto;
 import dev.profitsoft.intern.lec911.dto.book.BookInfoDto;
-import dev.profitsoft.intern.lec911.dto.book.BookQueryDto;
+import dev.profitsoft.intern.lec911.dto.book.BookSearchDto;
 import dev.profitsoft.intern.lec911.dto.book.BookSaveDto;
 import dev.profitsoft.intern.lec911.exception.ResourceNotFoundException;
 import dev.profitsoft.intern.lec911.model.Author;
@@ -12,6 +12,9 @@ import dev.profitsoft.intern.lec911.repository.AuthorRepository;
 import dev.profitsoft.intern.lec911.repository.BookRepository;
 import dev.profitsoft.intern.lec911.service.BookService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -60,12 +63,16 @@ public class BookServiceImpl implements BookService {
         bookRepository.deleteById(book.getId());
     }
 
-    // TODO search
     @Override
-    public List<BookDetailsDto> search(BookQueryDto dto) {
-        Author author = authorRepository.findById(dto.getAuthorId()).get();
-        int year = dto.getYear();
-        List<Book> books = bookRepository.searchAllByAuthorOrYear(null, year);
+    public List<BookDetailsDto> searchBook(BookSearchDto dto) {
+        Author author = resolveAuthor(dto.getAuthorId());
+        Integer year = dto.getYear();
+        Pageable pageable = dto.getPage() == null || dto.getSize() == null
+                ? Pageable.unpaged()
+                : PageRequest.of(dto.getPage() - 1, dto.getSize());
+
+        Page<Book> books = bookRepository.searchAllByAuthorOrYear(author, year, pageable);
+
         return books.stream()
                 .map(this::convertToBookDetails)
                 .toList();
@@ -96,9 +103,9 @@ public class BookServiceImpl implements BookService {
                 orElseThrow(() -> new IllegalArgumentException("Author with id %d not found".formatted(authorId)));
     }
 
-    private Book getOrThrow(long id) {
-        return bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book with id %d not found".formatted(id)));
+    private Book getOrThrow(long bookId) {
+        return bookRepository.findById(bookId)
+                .orElseThrow(() -> new ResourceNotFoundException("Book with id %d not found".formatted(bookId)));
     }
 
     private BookDetailsDto convertToBookDetails(Book book) {
@@ -113,7 +120,6 @@ public class BookServiceImpl implements BookService {
         if (author == null) {
             return null;
         }
-
         return new AuthorInfoDto(author.getId(), author.getFirstName(), author.getLastName());
     }
 

@@ -2,7 +2,7 @@ package dev.profitsoft.intern.lec911.controller;
 
 import dev.profitsoft.intern.lec911.dto.RestResponse;
 import dev.profitsoft.intern.lec911.dto.book.BookDetailsDto;
-import dev.profitsoft.intern.lec911.dto.book.BookQueryDto;
+import dev.profitsoft.intern.lec911.dto.book.BookSearchDto;
 import dev.profitsoft.intern.lec911.dto.book.BookSaveDto;
 import dev.profitsoft.intern.lec911.service.BookService;
 import lombok.RequiredArgsConstructor;
@@ -55,8 +55,11 @@ public class BookController {
     }
 
     @PostMapping("/_search")
-    public List<BookDetailsDto> search(@RequestBody BookQueryDto query) {
-        return bookService.search(query);
+    public ResponseEntity<Object> searchBook(@Valid @RequestBody BookSearchDto dto) {
+        List<BookDetailsDto> books = bookService.searchBook(dto);
+        return books.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(books);
     }
 
     @DeleteMapping("/{id}")
