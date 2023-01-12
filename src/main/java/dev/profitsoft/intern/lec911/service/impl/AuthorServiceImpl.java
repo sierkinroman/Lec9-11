@@ -9,6 +9,7 @@ import dev.profitsoft.intern.lec911.repository.AuthorRepository;
 import dev.profitsoft.intern.lec911.service.AuthorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -20,6 +21,7 @@ public class AuthorServiceImpl implements AuthorService {
     private final AuthorRepository authorRepository;
 
     @Override
+    @Transactional
     public List<AuthorDetailsDto> findAll() {
         return authorRepository.findAll().stream()
                 .map(this::convertToAuthorDetails)
