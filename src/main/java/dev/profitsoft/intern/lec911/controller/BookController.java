@@ -41,7 +41,7 @@ public class BookController {
     }
 
     @GetMapping
-    public ResponseEntity<Object> getAllBooks() {
+    public ResponseEntity<List<BookDetailsDto>> getAllBooks() {
         List<BookDetailsDto> books = bookService.findAll();
         return books.isEmpty()
                 ? ResponseEntity.noContent().build()
@@ -55,7 +55,7 @@ public class BookController {
     }
 
     @PostMapping("/_search")
-    public ResponseEntity<Object> searchBook(@Valid @RequestBody BookSearchDto dto) {
+    public ResponseEntity<List<BookDetailsDto>> searchBook(@Valid @RequestBody BookSearchDto dto) {
         List<BookDetailsDto> books = bookService.searchBook(dto);
         return books.isEmpty()
                 ? ResponseEntity.noContent().build()
