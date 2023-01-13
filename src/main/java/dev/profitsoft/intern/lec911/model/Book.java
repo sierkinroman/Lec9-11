@@ -1,6 +1,5 @@
 package dev.profitsoft.intern.lec911.model;
 
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +19,6 @@ import java.time.LocalDate;
 @Setter
 @EqualsAndHashCode(of = {"id"})
 @ToString(of = {"title", "isbn", "publishedDate", "author"})
-@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name = "book")

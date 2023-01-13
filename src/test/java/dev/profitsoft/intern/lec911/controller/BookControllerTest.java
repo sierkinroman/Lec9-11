@@ -112,7 +112,7 @@ class BookControllerTest {
     @Test
     public void testCreateBook_duplicateIsbn() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
-        bookRepository.save(new Book(1, "new book", "12345", LocalDate.now(), author));
+        createBook("new book", "12345", author);
         BookSaveDto saveDto = getBookSaveDto("new book2", "12345", LocalDate.now(), author.getId());
 
         mvc.perform(
@@ -317,6 +317,7 @@ class BookControllerTest {
     @Sql("classpath:data-test.sql")
     public void testSearchBook_success_byAuthorId() throws Exception{
         BookSearchDto searchDto = new BookSearchDto(1L, null, null, null);
+
         mvc.perform(
                 post("/api/books/_search")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -331,6 +332,7 @@ class BookControllerTest {
     @Sql("classpath:data-test.sql")
     public void testSearchBook_success_byYear() throws Exception{
         BookSearchDto searchDto = new BookSearchDto(null, 2002, null, null);
+
         mvc.perform(
                 post("/api/books/_search")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -345,6 +347,7 @@ class BookControllerTest {
     @Sql("classpath:data-test.sql")
     public void testSearchBook_success_pagination() throws Exception{
         BookSearchDto searchDto = new BookSearchDto(1L, 2002, 1, 5);
+
         mvc.perform(
                 post("/api/books/_search")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -358,6 +361,7 @@ class BookControllerTest {
     @Sql("classpath:data-test.sql")
     public void testSearchBook_authorIdNotFound() throws Exception{
         BookSearchDto searchDto = new BookSearchDto(100L, 2002, 1, 5);
+
         mvc.perform(
                 post("/api/books/_search")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -372,6 +376,7 @@ class BookControllerTest {
     @Sql("classpath:data-test.sql")
     public void testSearchBook_noContent() throws Exception{
         BookSearchDto searchDto = new BookSearchDto(null, 2002, 11, 5);
+
         mvc.perform(
                 post("/api/books/_search")
                         .contentType(MediaType.APPLICATION_JSON)
