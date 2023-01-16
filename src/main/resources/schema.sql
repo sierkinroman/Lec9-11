@@ -20,3 +20,5 @@ CREATE TABLE IF NOT EXISTS book
         REFERENCES author (id)
         ON DELETE CASCADE
 );
+
+CREATE INDEX published_date ON book(published_date);
