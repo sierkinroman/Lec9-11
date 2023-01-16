@@ -8,8 +8,8 @@ INSERT INTO author (first_name, last_name) VALUES
     ('Charles', 'Dickens');
 
 INSERT INTO book (title, isbn, published_date, author_id) VALUES
-    ('Being and Time', '9780007119318', '2007-06-04', 1),
-    ('The Goose Girl', '9780553119220', '2008-10-28', 1),
+    ('Being and Time', '9780007119318', '2002-06-04', 1),
+    ('The Goose Girl', '9780553119220', '2002-10-28', 1),
     ('The Last Lecture', '9780646418438', '2002-10-21', 1),
     ('The Glass Menagerie', '9780007151660', '2002-08-24', 1),
     ('Create Your Own Life', '9780670012824', '2011-02-03', 2),

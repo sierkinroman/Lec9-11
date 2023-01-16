@@ -71,11 +71,30 @@ public class BookServiceImpl implements BookService {
                 ? Pageable.unpaged()
                 : PageRequest.of(dto.getPage() - 1, dto.getSize());
 
-        Page<Book> books = bookRepository.searchAllByAuthorOrYear(author, year, pageable);
+        Page<Book> books = resolveSearch(author, year, pageable);
 
         return books.stream()
                 .map(this::convertToBookDetails)
                 .toList();
+    }
+
+    private Page<Book> resolveSearch(Author author, Integer year, Pageable pageable) {
+        LocalDate dateStart = null;
+        LocalDate dateEnd = null;
+        if (year != null) {
+            dateStart = LocalDate.of(year, 1, 1);
+            dateEnd = LocalDate.of(year, 12, 31);
+        }
+
+        if (author != null && year == null) {
+            return bookRepository.findAllByAuthor(author, pageable);
+        } else if (year != null && author == null) {
+            return bookRepository.findAllByPublishedDateBetween(dateStart, dateEnd, pageable);
+        } else if (author != null && year != null) {
+            return bookRepository.findAllByAuthorAndPublishedDateBetween(author, dateStart, dateEnd, pageable);
+        }
+
+        return bookRepository.findAll(pageable);
     }
 
     private void validateDto(BookSaveDto dto) {

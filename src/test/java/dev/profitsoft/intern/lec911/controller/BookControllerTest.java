@@ -310,7 +310,9 @@ class BookControllerTest {
                         .content(objectMapper.writeValueAsString(searchDto))
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(7)));
+                .andExpect(jsonPath("$", hasSize(4)))
+                .andExpect(jsonPath("$[*].author.id", everyItem(equalTo(1))))
+                .andExpect(jsonPath("$[*].publishedDate", everyItem(containsString("2002"))));
     }
 
     @Test
@@ -339,14 +341,14 @@ class BookControllerTest {
                         .content(objectMapper.writeValueAsString(searchDto))
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(5)))
+                .andExpect(jsonPath("$", hasSize(7)))
                 .andExpect(jsonPath("$[*].publishedDate", everyItem(containsString("2002"))));
     }
 
     @Test
     @Sql("classpath:data-test.sql")
     public void testSearchBook_success_pagination() throws Exception{
-        BookSearchDto searchDto = new BookSearchDto(1L, 2002, 1, 5);
+        BookSearchDto searchDto = new BookSearchDto(1L, 2002, 1, 3);
 
         mvc.perform(
                 post("/api/books/_search")
@@ -354,7 +356,9 @@ class BookControllerTest {
                         .content(objectMapper.writeValueAsString(searchDto))
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(5)));
+                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$[*].author.id", everyItem(equalTo(1))))
+                .andExpect(jsonPath("$[*].publishedDate", everyItem(containsString("2002"))));
     }
 
     @Test
