@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,6 +30,7 @@ public class BookServiceImpl implements BookService {
     private final AuthorRepository authorRepository;
 
     @Override
+    @Transactional
     public long save(BookSaveDto dto) {
         validateDto(dto);
         Book book = new Book();
@@ -37,12 +39,14 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BookDetailsDto findById(long id) {
         Book book = getOrThrow(id);
         return convertToBookDetails(book);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookDetailsDto> findAll() {
         return bookRepository.findAll().stream()
                 .map(this::convertToBookDetails)
@@ -50,6 +54,7 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional
     public void update(long id, BookSaveDto dto) {
         validateDto(dto);
         Book book = getOrThrow(id);
@@ -58,12 +63,14 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional
     public void deleteById(long id) {
         Book book = getOrThrow(id);
         bookRepository.deleteById(book.getId());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookDetailsDto> searchBook(BookSearchDto dto) {
         Author author = resolveAuthor(dto.getAuthorId());
         Integer year = dto.getYear();
