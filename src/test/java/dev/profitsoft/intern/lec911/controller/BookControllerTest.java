@@ -255,7 +255,8 @@ class BookControllerTest {
     public void testUpdateBook_duplicateIsbn() throws Exception {
         Author author = createAuthor("Roman", "Romanov");
         Book book = createBook("new book", "12345", author);
-        BookSaveDto saveDto = getBookSaveDto("updated Title", "12345", LocalDate.now(), author.getId());
+        Book book2 = createBook("another new book", "123456", author);
+        BookSaveDto saveDto = getBookSaveDto("updated Title", "123456", LocalDate.now(), author.getId());
 
         mvc.perform(
                 put("/api/books/{id}", book.getId())
@@ -265,6 +266,27 @@ class BookControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(result ->
                         assertThat(result.getResolvedException().getMessage()).isEqualTo("book with given isbn already exists"));
+    }
+
+    @Test
+    public void testUpdateBook_updateSelfDuplicateIsbn() throws Exception {
+        Author author = createAuthor("Roman", "Romanov");
+        Book book = createBook("new book", "12345", author);
+        BookSaveDto saveDto = getBookSaveDto("updated Title", "12345", LocalDate.now(), author.getId());
+
+        mvc.perform(
+                put("/api/books/{id}", book.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(saveDto))
+                )
+                .andExpect(status().isOk());
+
+        Book updatedBook = bookRepository.findById(book.getId()).orElse(null);
+        assertThat(updatedBook).isNotNull();
+        assertThat(updatedBook.getTitle()).isEqualTo(saveDto.getTitle());
+        assertThat(updatedBook.getIsbn()).isEqualTo(saveDto.getIsbn());
+        assertThat(updatedBook.getPublishedDate()).isEqualTo(saveDto.getPublishedDate());
+        assertThat(updatedBook.getAuthor().getId()).isEqualTo(saveDto.getAuthorId());
     }
 
     @Test

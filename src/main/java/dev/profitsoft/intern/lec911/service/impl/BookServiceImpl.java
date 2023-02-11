@@ -32,7 +32,7 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional
     public long save(BookSaveDto dto) {
-        validateDto(dto);
+        validateDto(dto, -1);
         Book book = new Book();
         updateBookFromDto(book, dto);
         return bookRepository.save(book).getId();
@@ -56,7 +56,7 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional
     public void update(long id, BookSaveDto dto) {
-        validateDto(dto);
+        validateDto(dto, id);
         Book book = getOrThrow(id);
         updateBookFromDto(book, dto);
         bookRepository.save(book);
@@ -104,9 +104,11 @@ public class BookServiceImpl implements BookService {
         return bookRepository.findAll(pageable);
     }
 
-    private void validateDto(BookSaveDto dto) {
+    private void validateDto(BookSaveDto dto, long id) {
         bookRepository.findByIsbn(dto.getIsbn()).ifPresent(book -> {
-            throw new IllegalArgumentException("book with given isbn already exists");
+            if (book.getId() != id) {
+                throw new IllegalArgumentException("book with given isbn already exists");
+            }
         });
 
         if (dto.getPublishedDate() != null && dto.getPublishedDate().isAfter(LocalDate.now())) {
